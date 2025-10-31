@@ -2,62 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../auth/AuthContext';
 import { doc, getDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebase/config';
+import { useNavigate } from 'react-router-dom';
 import SuccessModal from './SuccessModal';
-
-interface ResetaTemplate {
-  clinicName: string;
-  doctorName: string;
-  doctorCredentials: string;
-  professionalTitle: string;
-  specialty: string;
-  clinicAddress: string;
-  clinicRoom?: string;
-  clinicCity?: string;
-  clinicCountry: string;
-  phone: string;
-  email: string;
-  mobile?: string;
-  clinicHours: {
-    monday?: string;
-    tuesday?: string;
-    wednesday?: string;
-    thursday?: string;
-    friday?: string;
-    saturday?: string;
-    sunday?: string;
-  };
-  licenseNo: string;
-  ptrNo?: string;
-  s2LicenseNo?: string;
-  headerColor: string;
-  accentColor: string;
-  showRxSymbol: boolean;
-  paperColor: string;
-}
-
-interface Medication {
-  id: string;
-  name: string;
-  dosage: string;
-  frequency: string;
-  duration: string;
-  instructions: string;
-}
-
-interface PatientInfo {
-  name: string;
-  age: string;
-  sex: string;
-  address: string;
-  contactNumber: string;
-}
+import ErrorModal from './ErrorModal';
+import type { ResetaTemplate, Medication, PatientInfo } from '../../types/prescription';
 
 const GeneratePrescription: React.FC = () => {
   const { currentUser, userData } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showError, setShowError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const [template, setTemplate] = useState<ResetaTemplate | null>(null);
   const [hasTemplate, setHasTemplate] = useState(false);
   const [templateLoadTime, setTemplateLoadTime] = useState<Date | null>(null);
@@ -125,7 +83,8 @@ const GeneratePrescription: React.FC = () => {
     } catch (error) {
       console.error('Error loading template:', error);
       setHasTemplate(false);
-      alert('Failed to load template. Please try again.');
+      setErrorMessage('Failed to load template. Please try again.');
+      setShowError(true);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -168,13 +127,15 @@ const GeneratePrescription: React.FC = () => {
     if (!currentUser || !template) return;
 
     if (!patientInfo.name) {
-      alert('Please fill in required patient information (Name)');
+      setErrorMessage('Please fill in required patient information (Name)');
+      setShowError(true);
       return;
     }
 
     const hasValidMedication = medications.some(med => med.name.trim() !== '');
     if (!hasValidMedication) {
-      alert('Please add at least one medication');
+      setErrorMessage('Please add at least one medication');
+      setShowError(true);
       return;
     }
 
@@ -226,7 +187,8 @@ const GeneratePrescription: React.FC = () => {
       
     } catch (error) {
       console.error('Error saving prescription:', error);
-      alert('Failed to save prescription. Please try again.');
+      setErrorMessage('Failed to save prescription. Please try again.');
+      setShowError(true);
       setSaving(false);
     }
   };
@@ -257,13 +219,13 @@ const GeneratePrescription: React.FC = () => {
           </p>
           <div className="space-y-3">
             <button
-              onClick={() => window.location.href = '/create-reseta-template'}
+              onClick={() => navigate('/create-reseta-template')}
               className="w-full px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-all"
             >
               Create Template
             </button>
             <button
-              onClick={() => window.history.back()}
+              onClick={() => navigate('/landing')}
               className="w-full px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all"
             >
               Go Back
@@ -286,7 +248,7 @@ const GeneratePrescription: React.FC = () => {
               </div>
               <div className="flex gap-3">
                 <button
-                  onClick={() => window.history.back()}
+                  onClick={() => navigate('/landing')}
                   className="px-4 py-2 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all"
                 >
                   Cancel
@@ -327,7 +289,7 @@ const GeneratePrescription: React.FC = () => {
                   {templateLoadTime && `Loaded at ${templateLoadTime.toLocaleTimeString()}`}
                   {' • '}
                   <button 
-                    onClick={() => window.location.href = '/create-reseta-template'}
+                    onClick={() => navigate('/create-reseta-template')}
                     className="text-indigo-600 hover:text-indigo-700 font-medium underline"
                   >
                     Edit Template
@@ -708,6 +670,15 @@ const GeneratePrescription: React.FC = () => {
         icon="check"
         autoCloseDelay={3500}
         showConfetti={false}
+      />
+
+      {/* Error Modal */}
+      <ErrorModal
+        isOpen={showError}
+        onClose={() => setShowError(false)}
+        title="Error"
+        message={errorMessage}
+        errorType="error"
       />
     </>
   );

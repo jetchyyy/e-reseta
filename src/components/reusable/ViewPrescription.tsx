@@ -1,70 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../auth/AuthContext';
-import { collection, query, where,  getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { collection, query, where, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { useNavigate } from 'react-router-dom';
 import { toJpeg } from 'html-to-image';
-
-
-interface Medication {
-  id: string;
-  name: string;
-  dosage: string;
-  frequency: string;
-  duration: string;
-  instructions: string;
-}
-
-interface PatientInfo {
-  name: string;
-  age: string;
-  sex: string;
-  address: string;
-  contactNumber: string;
-}
-
-interface ResetaTemplate {
-  clinicName: string;
-  doctorName: string;
-  doctorCredentials: string;
-  specialty: string;
-  clinicAddress: string;
-  clinicRoom?: string;
-  clinicCity?: string;
-  clinicCountry: string;
-  phone: string;
-  email: string;
-  mobile?: string;
-  clinicHours: {
-    monday?: string;
-    tuesday?: string;
-    wednesday?: string;
-    thursday?: string;
-    friday?: string;
-    saturday?: string;
-    sunday?: string;
-  };
-  licenseNo: string;
-  ptrNo?: string;
-  s2LicenseNo?: string;
-  headerColor: string;
-  accentColor: string;
-  showRxSymbol: boolean;
-  paperColor: string;
-}
-
-interface Prescription {
-  id: string;
-  doctorId: string;
-  patientInfo: PatientInfo;
-  medications: Medication[];
-  diagnosis: string;
-  additionalNotes: string;
-  prescriptionDate: string;
-  template: ResetaTemplate;
-  createdAt: any;
-  status: string;
-}
+import ErrorModal from './ErrorModal';
+import type { Prescription } from '../../types/prescription';
 
 const ViewPrescriptions: React.FC = () => {
   const { currentUser, userData } = useAuth();
@@ -74,6 +15,8 @@ const ViewPrescriptions: React.FC = () => {
   const [selectedPrescription, setSelectedPrescription] = useState<Prescription | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'archived'>('all');
+  const [showError, setShowError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     loadPrescriptions();
@@ -88,7 +31,6 @@ const ViewPrescriptions: React.FC = () => {
     const q = query(
       prescriptionsRef,
       where('doctorId', '==', currentUser.uid)
-      // Remove orderBy
     );
 
     const querySnapshot = await getDocs(q);
@@ -101,17 +43,18 @@ const ViewPrescriptions: React.FC = () => {
       } as Prescription);
     });
 
-    // Sort in JavaScript instead
+    // Sort in JavaScript instead of Firestore to avoid composite index requirement
     loadedPrescriptions.sort((a, b) => {
       const aTime = a.createdAt?.toMillis?.() || 0;
       const bTime = b.createdAt?.toMillis?.() || 0;
-      return bTime - aTime; // descending order
+      return bTime - aTime; // descending order (newest first)
     });
 
     setPrescriptions(loadedPrescriptions);
   } catch (error) {
     console.error('Error loading prescriptions:', error);
-    alert('Failed to load prescriptions. Please try again.');
+    setErrorMessage('Failed to load prescriptions. Please try again.');
+    setShowError(true);
   } finally {
     setLoading(false);
   }
@@ -133,10 +76,11 @@ const handleDeletePrescription = async (prescriptionId: string) => {
         setSelectedPrescription(null);
       }
       
-      alert('Prescription deleted successfully!');
+      // Success feedback would be better with a toast, but we'll keep it simple for now
     } catch (error) {
       console.error('Error deleting prescription:', error);
-      alert('Failed to delete prescription. Please try again.');
+      setErrorMessage('Failed to delete prescription. Please try again.');
+      setShowError(true);
     }
   };
 
@@ -148,14 +92,15 @@ const handleDeletePrescription = async (prescriptionId: string) => {
 
 const handleSaveAsJPG = async () => {
   if (!prescriptionRef.current) {
-    alert('Prescription preview not found.');
+    setErrorMessage('Prescription preview not found.');
+    setShowError(true);
     return;
   }
 
   try {
     const dataUrl = await toJpeg(prescriptionRef.current, {
       quality: 0.95,
-      backgroundColor: 'white', // ensures white background
+      backgroundColor: 'white',
     });
     const link = document.createElement('a');
     link.download = `${selectedPrescription?.patientInfo.name || 'prescription'}.jpg`;
@@ -163,7 +108,8 @@ const handleSaveAsJPG = async () => {
     link.click();
   } catch (error) {
     console.error('Error saving JPG:', error);
-    alert('Failed to save as JPG.');
+    setErrorMessage('Failed to save as JPG. Please try again.');
+    setShowError(true);
   }
 };
 
@@ -534,6 +480,15 @@ const handleSaveAsJPG = async () => {
           </div>
         </div>
       </div>
+
+      {/* Error Modal */}
+      <ErrorModal
+        isOpen={showError}
+        onClose={() => setShowError(false)}
+        title="Error"
+        message={errorMessage}
+        errorType="error"
+      />
     </div>
   );
 };

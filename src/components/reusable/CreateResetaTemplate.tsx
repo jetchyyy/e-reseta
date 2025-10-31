@@ -2,53 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../auth/AuthContext';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../../firebase/config';
+import { useNavigate } from 'react-router-dom';
 import SuccessModal from './SuccessModal';
-
-interface ResetaTemplate {
-  // Header Information
-  clinicName: string;
-  doctorName: string;
-  doctorCredentials: string;
-  professionalTitle: string;
-  specialty: string;
-  
-  // Contact Information
-  clinicAddress: string;
-  clinicRoom?: string;
-  clinicCity?: string;
-  clinicCountry: string;
-  phone: string;
-  email: string;
-  mobile?: string;
-  
-  // Clinic Hours
-  clinicHours: {
-    monday?: string;
-    tuesday?: string;
-    wednesday?: string;
-    thursday?: string;
-    friday?: string;
-    saturday?: string;
-    sunday?: string;
-  };
-  
-  // Footer Information
-  licenseNo: string;
-  ptrNo?: string;
-  s2LicenseNo?: string;
-  
-  // Design preferences
-  headerColor: string;
-  accentColor: string;
-  showRxSymbol: boolean;
-  paperColor: string;
-}
+import ErrorModal from './ErrorModal';
+import type { ResetaTemplate } from '../../types/prescription';
 
 const CreateResetaTemplate: React.FC = () => {
   const { currentUser, userData } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showError, setShowError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const [existingTemplate, setExistingTemplate] = useState<ResetaTemplate | null>(null);
   const [activeTab, setActiveTab] = useState<'basic' | 'contact' | 'hours' | 'design'>('basic');
   
@@ -104,27 +70,33 @@ const CreateResetaTemplate: React.FC = () => {
     
     // Validation
     if (!template.clinicName.trim()) {
-      alert('Please enter clinic name');
+      setErrorMessage('Please enter clinic name');
+      setShowError(true);
       return;
     }
     if (!template.doctorName.trim()) {
-      alert('Please enter doctor name');
+      setErrorMessage('Please enter doctor name');
+      setShowError(true);
       return;
     }
     if (!template.specialty.trim()) {
-      alert('Please enter specialty');
+      setErrorMessage('Please enter specialty');
+      setShowError(true);
       return;
     }
     if (!template.clinicAddress.trim()) {
-      alert('Please enter clinic address');
+      setErrorMessage('Please enter clinic address');
+      setShowError(true);
       return;
     }
     if (!template.phone.trim()) {
-      alert('Please enter phone number');
+      setErrorMessage('Please enter phone number');
+      setShowError(true);
       return;
     }
     if (!template.email.trim()) {
-      alert('Please enter email');
+      setErrorMessage('Please enter email');
+      setShowError(true);
       return;
     }
     
@@ -137,7 +109,8 @@ const CreateResetaTemplate: React.FC = () => {
       setShowSuccess(true);
     } catch (error) {
       console.error('Error saving template:', error);
-      alert('Failed to save template. Please try again.');
+      setErrorMessage('Failed to save template. Please try again.');
+      setShowError(true);
       setSaving(false);
     }
   };
@@ -187,7 +160,7 @@ const CreateResetaTemplate: React.FC = () => {
               </div>
               <div className="flex gap-2 sm:gap-3 flex-shrink-0">
                 <button
-                  onClick={() => window.history.back()}
+                  onClick={() => navigate('/landing')}
                   className="flex-1 sm:flex-none px-3 sm:px-4 py-2 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all text-sm sm:text-base"
                 >
                   Cancel
@@ -687,8 +660,17 @@ const CreateResetaTemplate: React.FC = () => {
         title="Template Saved Successfully! 📋"
         message="Your prescription template has been saved. You can now use it to generate professional prescriptions for your patients."
         icon="check"
-        autoCloseDelay={3500}
+        autoCloseDelay={2500}
         showConfetti={false}
+      />
+
+      {/* Error Modal */}
+      <ErrorModal
+        isOpen={showError}
+        onClose={() => setShowError(false)}
+        title="Validation Error"
+        message={errorMessage}
+        errorType="warning"
       />
     </>
   );
