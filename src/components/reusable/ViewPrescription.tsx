@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { toJpeg } from 'html-to-image';
 import ErrorModal from './ErrorModal';
 import type { Prescription } from '../../types/prescription';
+import SuccessModal from './SuccessModal';
 
 const ViewPrescriptions: React.FC = () => {
   const { currentUser, userData } = useAuth();
@@ -19,7 +20,8 @@ const ViewPrescriptions: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [signatureBase64, setSignatureBase64] = useState('');
-
+const [showSuccess, setShowSuccess] = useState(false);
+const [successMessage, setSuccessMessage] = useState('');
   useEffect(() => {
     loadPrescriptions();
   }, [currentUser]);
@@ -116,7 +118,7 @@ const handleDeletePrescription = async (prescriptionId: string) => {
 const handleSaveAsJPG = async () => {
   if (!prescriptionRef.current) {
     setErrorMessage('Prescription preview not found.');
-    setShowError(true);
+    setShowSuccess(true);
     return;
   }
 
@@ -143,7 +145,10 @@ const handleSaveAsJPG = async () => {
         { type: 'image/jpeg' }
       );
 
+     
+
       try {
+        
         await navigator.share({
           files: [file],
           title: 'Prescription',
@@ -162,9 +167,9 @@ const handleSaveAsJPG = async () => {
     link.click();
     document.body.removeChild(link);
     
-    // Show success message using ErrorModal with info type
-    setErrorMessage('Image saved successfully! Check your Downloads folder or Gallery.');
-    setShowError(true);
+    // Show success message using SuccessModal
+    setSuccessMessage('Image saved successfully! Check your Downloads folder or Gallery.');
+    setShowSuccess(true);
   } catch (error) {
     console.error('Error saving JPG:', error);
     setErrorMessage('Failed to save as JPG. Please try again or use the Print option.');
@@ -509,14 +514,18 @@ const handleSaveAsJPG = async () => {
           </div>
         </div>
       </div>
-
-      {/* Error Modal */}
+<SuccessModal
+        isOpen={showSuccess}
+        onClose={() => setShowSuccess(false)}
+        title="Success" 
+        message={successMessage}
+        autoCloseDelay={5000} // Auto close after 5 seconds
+      />
       <ErrorModal
         isOpen={showError}
         onClose={() => setShowError(false)}
         title="Error"
         message={errorMessage}
-        errorType="error"
       />
 
       {/* Loading Overlay */}
