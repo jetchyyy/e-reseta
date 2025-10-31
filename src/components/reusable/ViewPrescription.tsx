@@ -18,10 +18,34 @@ const ViewPrescriptions: React.FC = () => {
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [signatureBase64, setSignatureBase64] = useState('');
 
   useEffect(() => {
     loadPrescriptions();
   }, [currentUser]);
+
+  // Convert signature URL to base64 for better iOS compatibility
+  useEffect(() => {
+    const loadSignature = async () => {
+      if (userData?.signature) {
+        try {
+          const response = await fetch(userData.signature);
+          const blob = await response.blob();
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            setSignatureBase64(reader.result as string);
+          };
+          reader.readAsDataURL(blob);
+        } catch (error) {
+          console.error('Error loading signature:', error);
+          // Fallback to original URL if conversion fails
+          setSignatureBase64(userData.signature);
+        }
+      }
+    };
+    
+    loadSignature();
+  }, [userData?.signature]);
 
  const loadPrescriptions = async () => {
   if (!currentUser) return;
@@ -98,6 +122,9 @@ const handleSaveAsJPG = async () => {
 
   try {
     setIsGeneratingImage(true);
+    
+    // Small delay to ensure signature is fully rendered
+    await new Promise(resolve => setTimeout(resolve, 100));
     
     const dataUrl = await toJpeg(prescriptionRef.current, {
       quality: 0.95,
@@ -443,12 +470,12 @@ const handleSaveAsJPG = async () => {
                   )}
 
                   <div className="border-t-2 border-gray-300 pt-4 mt-8">
-                    {userData?.signature && (
+                    {signatureBase64 && (
                       <div className="mb-3">
                         <img 
-                          src={userData.signature} 
+                          src={signatureBase64} 
                           alt="Signature" 
-                          className="h-12 object-contain mix-blend-darken"
+                          className="h-12 object-contain"
                           style={{ 
                             filter: 'contrast(1.2) brightness(1)',
                             backgroundColor: 'transparent'
