@@ -459,7 +459,7 @@ const handleSaveAsJPG = async () => {
                           <p className="font-semibold">
                             {idx + 1}. {med.name} {med.dosage}
                           </p>
-                          {med.frequency && <p className="ml-4">Sig: {med.frequency}</p>}
+                          {med.frequency && <p className="ml-4">Frequency: {med.frequency}</p>}
                           {med.duration && <p className="ml-4">Duration: {med.duration}</p>}
                           {med.instructions && <p className="ml-4 italic text-gray-700">{med.instructions}</p>}
                         </div>
