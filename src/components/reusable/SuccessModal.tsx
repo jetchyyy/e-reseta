@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 
 interface SuccessModalProps {
   isOpen: boolean;
@@ -19,6 +19,10 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
   autoCloseDelay = 3000,
   showConfetti = false,
 }) => {
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // Auto-close functionality
   useEffect(() => {
     if (isOpen && autoCloseDelay > 0) {
       const timer = setTimeout(() => {
@@ -28,6 +32,69 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
       return () => clearTimeout(timer);
     }
   }, [isOpen, autoCloseDelay, onClose]);
+
+  // Focus management: Focus close button when modal opens
+  useEffect(() => {
+    if (isOpen && closeButtonRef.current) {
+      closeButtonRef.current.focus();
+    }
+  }, [isOpen]);
+
+  // Keyboard navigation: Close on Escape key
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape);
+      // Prevent body scroll when modal is open
+      document.body.style.overflow = 'hidden';
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen, onClose]);
+
+  // Trap focus within modal
+  useEffect(() => {
+    if (!isOpen || !modalRef.current) return;
+
+    const modal = modalRef.current;
+    const focusableElements = modal.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
+
+    const handleTab = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+
+      if (e.shiftKey) {
+        // Shift + Tab
+        if (document.activeElement === firstElement) {
+          e.preventDefault();
+          lastElement?.focus();
+        }
+      } else {
+        // Tab
+        if (document.activeElement === lastElement) {
+          e.preventDefault();
+          firstElement?.focus();
+        }
+      }
+    };
+
+    modal.addEventListener('keydown', handleTab as EventListener);
+
+    return () => {
+      modal.removeEventListener('keydown', handleTab as EventListener);
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -81,10 +148,17 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 animate-fade-in">
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 animate-fade-in"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="success-modal-title"
+      aria-describedby="success-modal-description"
+      onClick={onClose} // Click backdrop to close
+    >
       {/* Confetti Effect */}
       {showConfetti && (
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
           {[...Array(50)].map((_, i) => (
             <div
               key={i}
@@ -110,18 +184,24 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
       )}
 
       {/* Modal Content */}
-      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative animate-scale-in">
+      <div 
+        ref={modalRef}
+        className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative animate-scale-in"
+        onClick={(e) => e.stopPropagation()} // Prevent closing when clicking modal content
+      >
         {/* Close Button */}
         <button
+          ref={closeButtonRef}
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
-          aria-label="Close"
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 rounded-lg p-1"
+          aria-label="Close success notification"
         >
           <svg
             className="w-6 h-6"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
+            aria-hidden="true"
           >
             <path
               strokeLinecap="round"
@@ -133,7 +213,7 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
         </button>
 
         {/* Icon */}
-        <div className="flex justify-center mb-6 animate-bounce-once">
+        <div className="flex justify-center mb-6 animate-bounce-once" aria-hidden="true">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full">
             {renderIcon()}
           </div>
@@ -141,27 +221,56 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
 
         {/* Content */}
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-3">{title}</h2>
-          <p className="text-gray-600 mb-6">{message}</p>
+          <h2 
+            id="success-modal-title"
+            className="text-2xl font-bold text-gray-900 mb-3"
+          >
+            {title}
+          </h2>
+          <p 
+            id="success-modal-description"
+            className="text-gray-600 mb-6"
+          >
+            {message}
+          </p>
 
           {/* Action Button */}
           <button
             onClick={onClose}
-            className="w-full px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-all transform hover:scale-105"
+            className="w-full px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-all transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            aria-label="Continue and close notification"
           >
             Continue
           </button>
 
           {/* Auto-close indicator */}
           {autoCloseDelay > 0 && (
-            <p className="text-xs text-gray-500 mt-4">
+            <p className="text-xs text-gray-500 mt-4" role="status" aria-live="polite">
               This will close automatically in {autoCloseDelay / 1000} seconds
             </p>
           )}
         </div>
+
+        {/* Screen reader announcement */}
+        <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+          Success notification: {title}. {message}
+        </div>
       </div>
 
       <style>{`
+        /* Screen reader only - visible only to screen readers */
+        .sr-only {
+          position: absolute;
+          width: 1px;
+          height: 1px;
+          padding: 0;
+          margin: -1px;
+          overflow: hidden;
+          clip: rect(0, 0, 0, 0);
+          white-space: nowrap;
+          border-width: 0;
+        }
+
         @keyframes fade-in {
           from {
             opacity: 0;

@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import SuccessModal from './SuccessModal';
 import ErrorModal from './ErrorModal';
 import type { ResetaTemplate, Medication, PatientInfo } from '../../types/prescription';
+import { validatePhone, validateAge, validateDosage, validateName } from '../../utils/validation';
 
 const GeneratePrescription: React.FC = () => {
   const { currentUser, userData } = useAuth();
@@ -19,6 +20,10 @@ const GeneratePrescription: React.FC = () => {
   const [template, setTemplate] = useState<ResetaTemplate | null>(null);
   const [hasTemplate, setHasTemplate] = useState(false);
   const [templateLoadTime, setTemplateLoadTime] = useState<Date | null>(null);
+  
+  // Field-specific error states for inline validation
+  const [patientErrors, setPatientErrors] = useState<Partial<Record<keyof PatientInfo, string>>>({});
+  const [medicationErrors, setMedicationErrors] = useState<Record<string, Partial<Record<keyof Medication, string>>>>({});
   
   const [patientInfo, setPatientInfo] = useState<PatientInfo>({
     name: '',
@@ -117,24 +122,105 @@ const GeneratePrescription: React.FC = () => {
     setMedications(medications.map(med => 
       med.id === id ? { ...med, [field]: value } : med
     ));
+    
+    // Clear error for this field when user types
+    setMedicationErrors(prev => {
+      const medErrors = { ...prev };
+      if (medErrors[id]) {
+        delete medErrors[id][field];
+        if (Object.keys(medErrors[id]).length === 0) {
+          delete medErrors[id];
+        }
+      }
+      return medErrors;
+    });
   };
 
   const updatePatientInfo = (field: keyof PatientInfo, value: string) => {
     setPatientInfo(prev => ({ ...prev, [field]: value }));
+    
+    // Clear error when user types
+    setPatientErrors(prev => {
+      const errors = { ...prev };
+      delete errors[field];
+      return errors;
+    });
   };
 
   const handleSavePrescription = async () => {
     if (!currentUser || !template) return;
 
-    if (!patientInfo.name) {
-      setErrorMessage('Please fill in required patient information (Name)');
+    // Clear previous errors
+    setPatientErrors({});
+    setMedicationErrors({});
+    const newPatientErrors: Partial<Record<keyof PatientInfo, string>> = {};
+    const newMedicationErrors: Record<string, Partial<Record<keyof Medication, string>>> = {};
+
+    // Validate patient name (required)
+    if (!patientInfo.name || !patientInfo.name.trim()) {
+      newPatientErrors.name = 'Patient name is required';
+    } else {
+      const nameValidation = validateName(patientInfo.name);
+      if (!nameValidation.isValid) {
+        newPatientErrors.name = nameValidation.error || 'Invalid patient name';
+      }
+    }
+
+    // Validate optional patient fields (only if filled)
+    if (patientInfo.age && patientInfo.age.trim()) {
+      const ageValidation = validateAge(patientInfo.age);
+      if (!ageValidation.isValid) {
+        newPatientErrors.age = ageValidation.error || 'Invalid age';
+      }
+    }
+
+    if (patientInfo.contactNumber && patientInfo.contactNumber.trim()) {
+      const phoneValidation = validatePhone(patientInfo.contactNumber);
+      if (!phoneValidation.isValid) {
+        newPatientErrors.contactNumber = phoneValidation.error || 'Invalid contact number';
+      }
+    }
+
+    // Validate medications
+    const validMedications = medications.filter(med => med.name.trim() !== '');
+    if (validMedications.length === 0) {
+      setErrorMessage('Please add at least one medication with a name');
       setShowError(true);
       return;
     }
 
-    const hasValidMedication = medications.some(med => med.name.trim() !== '');
-    if (!hasValidMedication) {
-      setErrorMessage('Please add at least one medication');
+    // Validate each medication
+    let hasMedicationErrors = false;
+    medications.forEach(med => {
+      if (med.name.trim()) {
+        const medErrors: Partial<Record<keyof Medication, string>> = {};
+        
+        // Validate dosage if provided
+        if (med.dosage && med.dosage.trim()) {
+          const dosageValidation = validateDosage(med.dosage);
+          if (!dosageValidation.isValid) {
+            medErrors.dosage = dosageValidation.error || 'Invalid dosage format';
+            hasMedicationErrors = true;
+          }
+        }
+        
+        if (Object.keys(medErrors).length > 0) {
+          newMedicationErrors[med.id] = medErrors;
+        }
+      }
+    });
+
+    // Set errors if any exist
+    if (Object.keys(newPatientErrors).length > 0) {
+      setPatientErrors(newPatientErrors);
+      setErrorMessage(`Please fix patient information: ${Object.values(newPatientErrors)[0]}`);
+      setShowError(true);
+      return;
+    }
+
+    if (hasMedicationErrors) {
+      setMedicationErrors(newMedicationErrors);
+      setErrorMessage('Please fix medication errors');
       setShowError(true);
       return;
     }
@@ -334,30 +420,51 @@ const GeneratePrescription: React.FC = () => {
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Patient Name <span className="text-red-500">*</span>
+                      <label htmlFor="patientName" className="block text-sm font-medium text-gray-700 mb-2">
+                        Patient Name <span className="text-red-500" aria-label="required">*</span>
                       </label>
                       <input
+                        id="patientName"
                         type="text"
                         value={patientInfo.name}
                         onChange={(e) => updatePatientInfo('name', e.target.value)}
                         placeholder="Juan Dela Cruz"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
+                          patientErrors.name ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                        aria-invalid={!!patientErrors.name}
+                        aria-describedby={patientErrors.name ? 'patientName-error' : undefined}
+                        required
                       />
+                      {patientErrors.name && (
+                        <p id="patientName-error" className="mt-1 text-sm text-red-600" role="alert">
+                          {patientErrors.name}
+                        </p>
+                      )}
                     </div>
                     
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label htmlFor="patientAge" className="block text-sm font-medium text-gray-700 mb-2">
                           Age (Optional)
                         </label>
                         <input
+                          id="patientAge"
                           type="text"
                           value={patientInfo.age}
                           onChange={(e) => updatePatientInfo('age', e.target.value)}
                           placeholder="25"
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
+                            patientErrors.age ? 'border-red-500' : 'border-gray-300'
+                          }`}
+                          aria-invalid={!!patientErrors.age}
+                          aria-describedby={patientErrors.age ? 'patientAge-error' : undefined}
                         />
+                        {patientErrors.age && (
+                          <p id="patientAge-error" className="mt-1 text-sm text-red-600" role="alert">
+                            {patientErrors.age}
+                          </p>
+                        )}
                       </div>
                       
                       <div>
@@ -389,14 +496,24 @@ const GeneratePrescription: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Contact Number</label>
+                    <label htmlFor="contactNumber" className="block text-sm font-medium text-gray-700 mb-2">Contact Number</label>
                     <input
+                      id="contactNumber"
                       type="tel"
                       value={patientInfo.contactNumber}
                       onChange={(e) => updatePatientInfo('contactNumber', e.target.value)}
                       placeholder="09123456789"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
+                        patientErrors.contactNumber ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                      aria-invalid={!!patientErrors.contactNumber}
+                      aria-describedby={patientErrors.contactNumber ? 'contactNumber-error' : undefined}
                     />
+                    {patientErrors.contactNumber && (
+                      <p id="contactNumber-error" className="mt-1 text-sm text-red-600" role="alert">
+                        {patientErrors.contactNumber}
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -479,14 +596,24 @@ const GeneratePrescription: React.FC = () => {
                         </div>
 
                         <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">Dosage</label>
+                          <label htmlFor={`dosage-${med.id}`} className="block text-xs font-medium text-gray-700 mb-1">Dosage</label>
                           <input
+                            id={`dosage-${med.id}`}
                             type="text"
                             value={med.dosage}
                             onChange={(e) => updateMedication(med.id, 'dosage', e.target.value)}
-                            placeholder="e.g., 500mg"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                            placeholder="e.g., 500mg or 2 tablets"
+                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm ${
+                              medicationErrors[med.id]?.dosage ? 'border-red-500' : 'border-gray-300'
+                            }`}
+                            aria-invalid={!!medicationErrors[med.id]?.dosage}
+                            aria-describedby={medicationErrors[med.id]?.dosage ? `dosage-${med.id}-error` : undefined}
                           />
+                          {medicationErrors[med.id]?.dosage && (
+                            <p id={`dosage-${med.id}-error`} className="mt-1 text-xs text-red-600" role="alert">
+                              {medicationErrors[med.id].dosage}
+                            </p>
+                          )}
                         </div>
 
                         <div>
