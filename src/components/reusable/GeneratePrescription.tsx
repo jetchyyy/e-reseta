@@ -242,7 +242,7 @@ const GeneratePrescription: React.FC = () => {
     );
   }
 
-  if (!hasTemplate) {
+  if (!hasTemplate || !template) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md text-center">
@@ -599,38 +599,36 @@ const GeneratePrescription: React.FC = () => {
                     <p className="text-gray-600 text-[10px]">{template.specialty}</p>
                   </div>
 
-                  {template && (
-                    <div className="mb-3 text-[9px]">
-                      <div className="grid grid-cols-2 gap-2 mb-2">
-                        <div>
-                          <p className="font-semibold mb-1">Address:</p>
-                          {template.clinicRoom && <p>{template.clinicRoom}</p>}
-                          <p>{template.clinicAddress}</p>
-                          {template.clinicCity && <p>{template.clinicCity}</p>}
-                          <p>{template.clinicCountry}</p>
-                        </div>
-                        <div>
-                          <p className="font-semibold mb-1">Contact:</p>
-                          <p>Phone: {template.phone}</p>
-                          {template.mobile && <p>Mobile: {template.mobile}</p>}
-                          <p>Email: {template.email}</p>
-                        </div>
+                  <div className="mb-3 text-[9px]">
+                    <div className="grid grid-cols-2 gap-2 mb-2">
+                      <div>
+                        <p className="font-semibold mb-1">Address:</p>
+                        {template.clinicRoom && <p>{template.clinicRoom}</p>}
+                        <p>{template.clinicAddress}</p>
+                        {template.clinicCity && <p>{template.clinicCity}</p>}
+                        <p>{template.clinicCountry}</p>
                       </div>
-                      
-                      {Object.keys(template.clinicHours).length > 0 && Object.values(template.clinicHours).some(v => v) && (
-                        <div className="border-t border-gray-300 pt-2 mt-2">
-                          <p className="font-semibold mb-1">Clinic Hours:</p>
-                          {Object.entries(template.clinicHours).map(([day, hours]) => 
-                            hours ? (
-                              <p key={day} className="capitalize">
-                                {day}: {hours}
-                              </p>
-                            ) : null
-                          )}
-                        </div>
-                      )}
+                      <div>
+                        <p className="font-semibold mb-1">Contact:</p>
+                        <p>Phone: {template.phone}</p>
+                        {template.mobile && <p>Mobile: {template.mobile}</p>}
+                        <p>Email: {template.email}</p>
+                      </div>
                     </div>
-                  )}
+                    
+                    {Object.keys(template.clinicHours).length > 0 && Object.values(template.clinicHours).some(v => v) && (
+                      <div className="border-t border-gray-300 pt-2 mt-2">
+                        <p className="font-semibold mb-1">Clinic Hours:</p>
+                        {Object.entries(template.clinicHours).map(([day, hours]) => 
+                          hours ? (
+                            <p key={day} className="capitalize">
+                              {day}: {hours}
+                            </p>
+                          ) : null
+                        )}
+                      </div>
+                    )}
+                  </div>
 
                   <div className="mb-3 text-[10px] border-t border-gray-300 pt-2">
                     <p><strong>Patient:</strong> {patientInfo.name || 'N/A'}</p>
