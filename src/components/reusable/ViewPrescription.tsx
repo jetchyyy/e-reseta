@@ -152,7 +152,7 @@ const handleSaveAsJPG = async () => {
   try {
     setIsGeneratingImage(true);
     
-      const dataUrl = await toJpeg(prescriptionRef.current, {
+    const dataUrl = await toJpeg(prescriptionRef.current, {
       quality: 0.95,
       backgroundColor: 'white',
       pixelRatio: 2,
@@ -218,26 +218,26 @@ const handleSaveAsJPG = async () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
       <div className="max-w-7xl mx-auto">
-        <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
-          <div className="flex items-center justify-between">
+        <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-6 mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
                 Prescription History
               </h1>
-              <p className="text-gray-600">
+              <p className="text-sm sm:text-base text-gray-600">
                 View and manage all your prescriptions
               </p>
             </div>
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
               <button
                 onClick={() => navigate('/landing')}
-                className="px-4 py-2 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all"
+                className="px-4 py-2 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all text-sm sm:text-base"
               >
                 Back to Dashboard
               </button>
               <button
                 onClick={() => navigate('/generate-prescription')}
-                className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-all flex items-center gap-2"
+                className="px-4 sm:px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-all flex items-center justify-center gap-2 text-sm sm:text-base"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -249,9 +249,9 @@ const handleSaveAsJPG = async () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-1 bg-white rounded-2xl shadow-xl p-6">
+          <div className="lg:col-span-1 bg-white rounded-2xl shadow-xl p-4 sm:p-6">
             <div className="mb-4">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">All Prescriptions</h2>
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">All Prescriptions</h2>
               
               <div className="mb-4">
                 <input
@@ -263,10 +263,10 @@ const handleSaveAsJPG = async () => {
                 />
               </div>
 
-              <div className="flex gap-2 mb-4">
+              <div className="flex flex-wrap gap-2 mb-4">
                 <button
                   onClick={() => setFilterStatus('all')}
-                  className={`px-3 py-1 rounded-lg text-sm font-medium transition-all ${
+                  className={`flex-1 sm:flex-none px-3 py-1 rounded-lg text-sm font-medium transition-all ${
                     filterStatus === 'all'
                       ? 'bg-indigo-600 text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -276,7 +276,7 @@ const handleSaveAsJPG = async () => {
                 </button>
                 <button
                   onClick={() => setFilterStatus('active')}
-                  className={`px-3 py-1 rounded-lg text-sm font-medium transition-all ${
+                  className={`flex-1 sm:flex-none px-3 py-1 rounded-lg text-sm font-medium transition-all ${
                     filterStatus === 'active'
                       ? 'bg-green-600 text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -286,7 +286,7 @@ const handleSaveAsJPG = async () => {
                 </button>
                 <button
                   onClick={() => setFilterStatus('archived')}
-                  className={`px-3 py-1 rounded-lg text-sm font-medium transition-all ${
+                  className={`flex-1 sm:flex-none px-3 py-1 rounded-lg text-sm font-medium transition-all ${
                     filterStatus === 'archived'
                       ? 'bg-gray-600 text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -357,13 +357,13 @@ const handleSaveAsJPG = async () => {
 
           <div className="lg:col-span-2">
             {selectedPrescription ? (
-              <div className="bg-white rounded-2xl shadow-xl p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-bold text-gray-900">Prescription Details</h2>
-                  <div className="flex gap-2">
+              <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-6">
+                <div className="mb-6">
+                  <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">Prescription Details</h2>
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <button
                       onClick={handlePrintPrescription}
-                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-all flex items-center gap-2"
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-all flex items-center justify-center gap-2"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
@@ -372,7 +372,7 @@ const handleSaveAsJPG = async () => {
                     </button>
                     <button
                       onClick={handleSaveAsJPG}
-                      className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-all flex items-center gap-2"
+                      className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-all flex items-center justify-center gap-2"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -381,7 +381,7 @@ const handleSaveAsJPG = async () => {
                     </button>
                     <button
                       onClick={() => handleDeletePrescription(selectedPrescription.id)}
-                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-all flex items-center gap-2"
+                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-all flex items-center justify-center gap-2"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -393,18 +393,18 @@ const handleSaveAsJPG = async () => {
 
                 <div 
                   ref={prescriptionRef}
-                  className="border-2 border-gray-300 rounded-lg p-8"
+                  className="border-2 border-gray-300 rounded-lg p-4 sm:p-8"
                   style={{ backgroundColor: selectedPrescription.template.paperColor }}
                 >
                   <div className="text-center mb-6 pb-4 border-b-2 border-gray-300">
-                    <h3 className="font-bold text-2xl mb-2" style={{ color: selectedPrescription.template.headerColor }}>
+                    <h3 className="font-bold text-xl sm:text-2xl mb-2" style={{ color: selectedPrescription.template.headerColor }}>
                       {selectedPrescription.template.clinicName}
                     </h3>
-                    <p className="font-semibold text-lg mb-1">
+                    <p className="font-semibold text-base sm:text-lg mb-1">
                       {selectedPrescription.template.doctorName}
                       {selectedPrescription.template.doctorCredentials && `, ${selectedPrescription.template.doctorCredentials}`}
                     </p>
-                    <p className="text-gray-600">{selectedPrescription.template.specialty}</p>
+                    <p className="text-sm sm:text-base text-gray-600">{selectedPrescription.template.specialty}</p>
                   </div>
 
                   <div className="mb-6 text-sm">
