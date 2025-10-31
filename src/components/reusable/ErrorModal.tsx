@@ -100,27 +100,35 @@ const ErrorModal: React.FC<ErrorModalProps> = ({
     switch (errorType) {
       case 'error':
         return {
-          bg: 'bg-red-100',
-          icon: 'text-red-500',
-          button: 'bg-red-600 hover:bg-red-700',
+          bg: 'bg-red-50',
+          iconBg: 'bg-red-100',
+          icon: 'text-red-600',
+          button: 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800',
+          border: 'border-red-200',
         };
       case 'warning':
         return {
-          bg: 'bg-yellow-100',
-          icon: 'text-yellow-500',
-          button: 'bg-yellow-600 hover:bg-yellow-700',
+          bg: 'bg-amber-50',
+          iconBg: 'bg-amber-100',
+          icon: 'text-amber-600',
+          button: 'bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700',
+          border: 'border-amber-200',
         };
       case 'info':
         return {
-          bg: 'bg-blue-100',
-          icon: 'text-blue-500',
-          button: 'bg-blue-600 hover:bg-blue-700',
+          bg: 'bg-blue-50',
+          iconBg: 'bg-blue-100',
+          icon: 'text-blue-600',
+          button: 'bg-gradient-to-r from-[#1D3557] to-[#457B9D] hover:from-[#152841] hover:to-[#3d6c8a]',
+          border: 'border-blue-200',
         };
       default:
         return {
-          bg: 'bg-red-100',
-          icon: 'text-red-500',
-          button: 'bg-red-600 hover:bg-red-700',
+          bg: 'bg-red-50',
+          iconBg: 'bg-red-100',
+          icon: 'text-red-600',
+          button: 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800',
+          border: 'border-red-200',
         };
     }
   };
@@ -132,7 +140,7 @@ const ErrorModal: React.FC<ErrorModalProps> = ({
       case 'error':
         return (
           <svg
-            className={`w-16 h-16 ${colors.icon}`}
+            className={`w-8 h-8 ${colors.icon}`}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -148,7 +156,7 @@ const ErrorModal: React.FC<ErrorModalProps> = ({
       case 'warning':
         return (
           <svg
-            className={`w-16 h-16 ${colors.icon}`}
+            className={`w-8 h-8 ${colors.icon}`}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -164,7 +172,7 @@ const ErrorModal: React.FC<ErrorModalProps> = ({
       case 'info':
         return (
           <svg
-            className={`w-16 h-16 ${colors.icon}`}
+            className={`w-8 h-8 ${colors.icon}`}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -200,7 +208,7 @@ const ErrorModal: React.FC<ErrorModalProps> = ({
 
   return (
     <div 
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 animate-fade-in"
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in"
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"
@@ -210,18 +218,18 @@ const ErrorModal: React.FC<ErrorModalProps> = ({
       {/* Modal Content */}
       <div 
         ref={modalRef}
-        className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative animate-scale-in"
+        className="bg-white rounded-2xl shadow-lg border border-gray-100 max-w-md w-full p-8 md:p-10 relative animate-scale-in"
         onClick={(e) => e.stopPropagation()} // Prevent closing when clicking modal content
       >
         {/* Close Button */}
         <button
           ref={closeButtonRef}
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 rounded-lg p-1"
+          className="absolute top-4 right-4 text-[#457B9D]/60 hover:text-[#1D3557] transition-colors focus:outline-none focus:ring-2 focus:ring-[#457B9D] focus:ring-offset-2 rounded-lg p-1.5"
           aria-label="Close notification"
         >
           <svg
-            className="w-6 h-6"
+            className="w-5 h-5"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -238,7 +246,7 @@ const ErrorModal: React.FC<ErrorModalProps> = ({
 
         {/* Icon */}
         <div className="flex justify-center mb-6" aria-hidden="true">
-          <div className={`inline-flex items-center justify-center w-20 h-20 ${colors.bg} rounded-full`}>
+          <div className={`inline-flex items-center justify-center w-16 h-16 ${colors.iconBg} rounded-2xl border ${colors.border}`}>
             {renderIcon()}
           </div>
         </div>
@@ -247,13 +255,13 @@ const ErrorModal: React.FC<ErrorModalProps> = ({
         <div className="text-center">
           <h2 
             id="modal-title"
-            className="text-2xl font-bold text-gray-900 mb-3"
+            className="text-2xl font-bold text-[#1D3557] mb-3 tracking-tight"
           >
             {title}
           </h2>
           <p 
             id="modal-description"
-            className="text-gray-600 mb-6"
+            className="text-[#457B9D] mb-8 leading-relaxed"
           >
             {message}
           </p>
@@ -261,16 +269,16 @@ const ErrorModal: React.FC<ErrorModalProps> = ({
           {/* Action Button */}
           <button
             onClick={onClose}
-            className={`w-full px-6 py-3 ${colors.button} text-white font-medium rounded-lg transition-all transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
+            className={`w-full px-6 py-3.5 ${colors.button} text-white font-semibold rounded-xl transition-all duration-300 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#457B9D]`}
             aria-label="Close and dismiss notification"
           >
-            OK
+            OK, Got it
           </button>
 
           {/* Auto-close indicator */}
           {autoCloseDelay > 0 && (
-            <p className="text-xs text-gray-500 mt-4" role="status" aria-live="polite">
-              This will close automatically in {autoCloseDelay / 1000} seconds
+            <p className="text-xs text-[#457B9D]/70 mt-4" role="status" aria-live="polite">
+              Closes automatically in {autoCloseDelay / 1000}s
             </p>
           )}
         </div>

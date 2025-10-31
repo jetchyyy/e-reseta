@@ -697,6 +697,7 @@ const { values, errors, handleChange, handleBlur, validateAll } =
 ### Short-term (Week 2-3)
 
 4. Enhance `GeneratePrescription` with validation
+
 ---
 
 ## 📝 All Tasks Completed
@@ -768,7 +769,7 @@ const [loading, setLoading] = useState(true);
 
 useEffect(() => {
   async function loadTemplate() {
-    const docRef = doc(db, 'resetaTemplates', userId);
+    const docRef = doc(db, "resetaTemplates", userId);
     const docSnap = await getDoc(docRef);
     setTemplate(docSnap.data());
     setLoading(false);
@@ -780,9 +781,9 @@ useEffect(() => {
 **After:**
 
 ```tsx
-import { useFirestoreDoc } from '@/hooks/useFirestoreDoc';
+import { useFirestoreDoc } from "@/hooks/useFirestoreDoc";
 
-const { data: template, loading } = useFirestoreDoc('resetaTemplates', userId);
+const { data: template, loading } = useFirestoreDoc("resetaTemplates", userId);
 ```
 
 ### Using Skeleton Loaders
@@ -860,6 +861,8 @@ if (loading) {
 
 **Last Updated:** January 2025  
 **Status:** All Priority 2 tasks completed ✅
-````
-**Next Review:** After Priority 2 completion  
+
+```
+**Next Review:** After Priority 2 completion
 **Maintainer:** Development Team
+```

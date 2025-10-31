@@ -7,6 +7,7 @@ import SuccessModal from './SuccessModal';
 import ErrorModal from './ErrorModal';
 import type { ResetaTemplate, Medication, PatientInfo } from '../../types/prescription';
 import { validatePhone, validateAge, validateDosage, validateName } from '../../utils/validation';
+import DashboardLayout from '../layout/DashboardLayout';
 
 const GeneratePrescription: React.FC = () => {
   const { currentUser, userData } = useAuth();
@@ -20,6 +21,8 @@ const GeneratePrescription: React.FC = () => {
   const [template, setTemplate] = useState<ResetaTemplate | null>(null);
   const [hasTemplate, setHasTemplate] = useState(false);
   const [templateLoadTime, setTemplateLoadTime] = useState<Date | null>(null);
+  const [patientAutoFilled, setPatientAutoFilled] = useState(false);
+  const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
   
   // Field-specific error states for inline validation
   const [patientErrors, setPatientErrors] = useState<Partial<Record<keyof PatientInfo, string>>>({});
@@ -52,7 +55,43 @@ const GeneratePrescription: React.FC = () => {
 
   useEffect(() => {
     loadTemplate();
+    loadPatientData();
   }, [currentUser]);
+
+  const loadPatientData = () => {
+    try {
+      const storedPatient = sessionStorage.getItem('selectedPatient');
+      if (storedPatient) {
+        const patient = JSON.parse(storedPatient);
+        
+        console.log('📋 Loading patient data:', patient);
+        console.log('📋 Patient ID:', patient.id);
+        
+        // Store the patient ID for linking prescription to patient
+        setSelectedPatientId(patient.id);
+        
+        // Auto-fill patient information from patient record
+        setPatientInfo({
+          name: `${patient.firstName} ${patient.middleName ? patient.middleName + ' ' : ''}${patient.lastName}`.trim(),
+          age: patient.age?.toString() || '',
+          sex: patient.gender || '',
+          address: patient.address || '',
+          contactNumber: patient.phone || ''
+        });
+
+        // Show auto-fill notification
+        setPatientAutoFilled(true);
+        
+        // Auto-hide notification after 5 seconds
+        setTimeout(() => setPatientAutoFilled(false), 5000);
+
+        // Clear the session storage after loading to prevent re-use
+        sessionStorage.removeItem('selectedPatient');
+      }
+    } catch (error) {
+      console.error('Error loading patient data:', error);
+    }
+  };
 
   const loadTemplate = async (isRefresh = false) => {
     if (!currentUser) return;
@@ -232,8 +271,11 @@ const GeneratePrescription: React.FC = () => {
       const templateDoc = await getDoc(templateRef);
       const latestTemplate = templateDoc.exists() ? templateDoc.data() as ResetaTemplate : template;
       
+      console.log('💊 Saving prescription with patientId:', selectedPatientId);
+      
       const prescriptionData = {
         doctorId: currentUser.uid,
+        patientId: selectedPatientId, // Link prescription to patient
         patientInfo,
         medications: medications.filter(med => med.name.trim() !== ''),
         diagnosis,
@@ -243,6 +285,8 @@ const GeneratePrescription: React.FC = () => {
         createdAt: serverTimestamp(),
         status: 'active'
       };
+
+      console.log('💊 Prescription data to save:', prescriptionData);
 
       const prescriptionsRef = collection(db, 'prescriptions');
       await addDoc(prescriptionsRef, prescriptionData);
@@ -258,6 +302,7 @@ const GeneratePrescription: React.FC = () => {
           address: '',
           contactNumber: ''
         });
+        setSelectedPatientId(null); // Clear patient ID reference
         setMedications([{
           id: '1',
           name: '',
@@ -323,48 +368,44 @@ const GeneratePrescription: React.FC = () => {
   }
 
   return (
-    <>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-6 mb-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">Generate Prescription</h1>
-                <p className="text-sm sm:text-base text-gray-600">Create a new prescription for your patient</p>
-              </div>
-              <div className="flex gap-2 sm:gap-3">
-                <button
-                  onClick={() => navigate('/landing')}
-                  className="flex-1 sm:flex-none px-4 py-2 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all text-sm sm:text-base"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSavePrescription}
-                  disabled={saving}
-                  className="flex-1 sm:flex-none px-4 sm:px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2 text-sm sm:text-base"
-                >
-                  {saving ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      <span>Saving...</span>
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      <span className="hidden sm:inline">Save Prescription</span>
-                      <span className="sm:hidden">Save</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-indigo-50 border-2 border-indigo-200 rounded-xl p-4 mb-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    <DashboardLayout 
+      title="Generate Prescription" 
+      subtitle="Create a new prescription for your patient"
+      actions={
+        <div className="flex gap-2 sm:gap-3">
+          <button
+            onClick={() => navigate('/landing')}
+            className="px-4 py-2 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all text-sm sm:text-base"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSavePrescription}
+            disabled={saving}
+            className="px-4 sm:px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2 text-sm sm:text-base"
+          >
+            {saving ? (
+              <>
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span>Saving...</span>
+              </>
+            ) : (
+              <>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span className="hidden sm:inline">Save Prescription</span>
+                <span className="sm:hidden">Save</span>
+              </>
+            )}
+          </button>
+        </div>
+      }
+    >
+      <div className="max-w-7xl mx-auto">
+        {/* Template notification */}
+        <div className="bg-indigo-50 border-2 border-indigo-200 rounded-xl p-4 sm:p-6 mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 flex-shrink-0 bg-indigo-600 rounded-lg flex items-center justify-center">
                   <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -406,6 +447,36 @@ const GeneratePrescription: React.FC = () => {
               </button>
             </div>
           </div>
+
+          {/* Patient Auto-Fill Notification */}
+          {patientAutoFilled && (
+            <div className="bg-emerald-50 border-2 border-emerald-200 rounded-xl p-4 mb-6 animate-fade-in">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 flex-shrink-0 bg-emerald-600 rounded-lg flex items-center justify-center">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-emerald-900 text-sm sm:text-base flex items-center gap-2">
+                    Patient Information Auto-Filled
+                    <button
+                      onClick={() => setPatientAutoFilled(false)}
+                      className="ml-auto p-1 hover:bg-emerald-100 rounded transition-colors"
+                      aria-label="Dismiss notification"
+                    >
+                      <svg className="w-4 h-4 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </h3>
+                  <p className="text-xs sm:text-sm text-emerald-700 mt-1">
+                    Patient details have been automatically populated from your patient records. You can edit them below if needed.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
@@ -790,7 +861,6 @@ const GeneratePrescription: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>
 
       <SuccessModal
         isOpen={showSuccess}
@@ -810,7 +880,7 @@ const GeneratePrescription: React.FC = () => {
         message={errorMessage}
         errorType="error"
       />
-    </>
+    </DashboardLayout>
   );
 };
 

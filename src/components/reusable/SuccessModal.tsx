@@ -103,7 +103,7 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
       case 'check':
         return (
           <svg
-            className="w-16 h-16 text-green-500"
+            className="w-8 h-8 text-emerald-600"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -119,7 +119,7 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
       case 'celebration':
         return (
           <svg
-            className="w-16 h-16 text-yellow-500"
+            className="w-8 h-8 text-amber-600"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -135,7 +135,7 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
       case 'heart':
         return (
           <svg
-            className="w-16 h-16 text-red-500"
+            className="w-8 h-8 text-rose-600"
             fill="currentColor"
             viewBox="0 0 24 24"
           >
@@ -149,7 +149,7 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
 
   return (
     <div 
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 animate-fade-in"
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in"
       role="dialog"
       aria-modal="true"
       aria-labelledby="success-modal-title"
@@ -173,7 +173,7 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
               <div
                 className="w-2 h-2 rounded-full"
                 style={{
-                  backgroundColor: ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6'][
+                  backgroundColor: ['#059669', '#14b8a6', '#457B9D', '#E11D48', '#D97706'][
                     Math.floor(Math.random() * 5)
                   ],
                 }}
@@ -186,18 +186,18 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
       {/* Modal Content */}
       <div 
         ref={modalRef}
-        className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative animate-scale-in"
+        className="bg-white rounded-2xl shadow-soft max-w-md w-full p-8 md:p-10 relative animate-scale-in"
         onClick={(e) => e.stopPropagation()} // Prevent closing when clicking modal content
       >
         {/* Close Button */}
         <button
           ref={closeButtonRef}
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 rounded-lg p-1"
+          className="absolute top-4 right-4 text-[#457B9D]/60 hover:text-[#1D3557] transition-colors focus:outline-none focus:ring-2 focus:ring-[#457B9D] focus:ring-offset-2 rounded-lg p-1.5"
           aria-label="Close success notification"
         >
           <svg
-            className="w-6 h-6"
+            className="w-5 h-5"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -214,7 +214,7 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
 
         {/* Icon */}
         <div className="flex justify-center mb-6 animate-bounce-once" aria-hidden="true">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl border border-emerald-200">
             {renderIcon()}
           </div>
         </div>
@@ -223,13 +223,13 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
         <div className="text-center">
           <h2 
             id="success-modal-title"
-            className="text-2xl font-bold text-gray-900 mb-3"
+            className="text-2xl font-bold text-[#1D3557] mb-3 tracking-tight"
           >
             {title}
           </h2>
           <p 
             id="success-modal-description"
-            className="text-gray-600 mb-6"
+            className="text-[#457B9D] mb-8 leading-relaxed"
           >
             {message}
           </p>
@@ -237,7 +237,7 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
           {/* Action Button */}
           <button
             onClick={onClose}
-            className="w-full px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-all transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            className="w-full px-6 py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold rounded-xl transition-all duration-300 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
             aria-label="Continue and close notification"
           >
             Continue
@@ -245,8 +245,8 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
 
           {/* Auto-close indicator */}
           {autoCloseDelay > 0 && (
-            <p className="text-xs text-gray-500 mt-4" role="status" aria-live="polite">
-              This will close automatically in {autoCloseDelay / 1000} seconds
+            <p className="text-xs text-[#457B9D]/70 mt-4" role="status" aria-live="polite">
+              Closes automatically in {autoCloseDelay / 1000}s
             </p>
           )}
         </div>

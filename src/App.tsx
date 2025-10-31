@@ -3,7 +3,9 @@ import { AuthProvider } from './auth/AuthContext';
 import ProtectedRoute from './auth/ProtectedRoute';
 import Login from './auth/Login';
 import LandingPage from './pages/LandingPage';
-import CreateResetaTemplate from './components/reusable/CreateResetaTemplate'; // Add this import
+import PatientsPage from './pages/PatientsPage';
+import PatientSelfRegistration from './pages/PatientSelfRegistration';
+import CreateResetaTemplate from './components/reusable/CreateResetaTemplate';
 import GeneratePrescription from './components/reusable/GeneratePrescription';
 import ViewPrescriptions from './components/reusable/ViewPrescription';
 
@@ -27,6 +29,9 @@ function App() {
           {/* Public route - Login */}
           <Route path="/login" element={<Login />} />
           
+          {/* Public route - Patient Self Registration */}
+          <Route path="/register-patient/:doctorId" element={<PatientSelfRegistration />} />
+          
           {/* Protected route - Landing Page */}
           <Route
             path="/landing"
@@ -46,6 +51,17 @@ function App() {
               </ProtectedRoute>
             }
           />
+          
+          {/* Protected route - Patients Management */}
+          <Route
+            path="/patients"
+            element={
+              <ProtectedRoute>
+                <PatientsPage />
+              </ProtectedRoute>
+            }
+          />
+          
           <Route
   path="/view-prescriptions"
   element={

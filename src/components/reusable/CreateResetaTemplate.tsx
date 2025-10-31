@@ -3,6 +3,7 @@ import { useAuth } from '../../auth/AuthContext';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { useNavigate } from 'react-router-dom';
+import DashboardLayout from '../layout/DashboardLayout';
 import SuccessModal from './SuccessModal';
 import ErrorModal from './ErrorModal';
 import type { ResetaTemplate } from '../../types/prescription';
@@ -162,53 +163,43 @@ const CreateResetaTemplate: React.FC = () => {
   }
 
   return (
-    <>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
-        <div className="max-w-6xl mx-auto">
-          {/* Header */}
-          <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-6 mb-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-                  {existingTemplate ? 'Edit' : 'Create'} Prescription Template
-                </h1>
-                <p className="text-sm sm:text-base text-gray-600">
-                  Customize how your prescriptions will look
-                </p>
-              </div>
-              <div className="flex gap-2 sm:gap-3 flex-shrink-0">
-                <button
-                  onClick={() => navigate('/landing')}
-                  className="flex-1 sm:flex-none px-3 sm:px-4 py-2 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all text-sm sm:text-base"
-                  aria-label="Cancel and return to landing page"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSaveTemplate}
-                  disabled={saving}
-                  className="flex-1 sm:flex-none px-4 sm:px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2 text-sm sm:text-base whitespace-nowrap"
-                  aria-label={saving ? 'Saving template' : 'Save template'}
-                >
-                  {saving ? (
-                    <>
-                      <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white border-t-transparent rounded-full animate-spin" aria-hidden="true"></div>
-                      <span>Saving...</span>
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      <span>Save Template</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <DashboardLayout 
+      title={existingTemplate ? 'Edit Prescription Template' : 'Create Prescription Template'}
+      subtitle="Customize how your prescriptions will look"
+      actions={
+        <div className="flex gap-2 sm:gap-3 flex-shrink-0">
+          <button
+            onClick={() => navigate('/landing')}
+            className="flex-1 sm:flex-none px-3 sm:px-4 py-2 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all text-sm sm:text-base"
+            aria-label="Cancel and return to landing page"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSaveTemplate}
+            disabled={saving}
+            className="flex-1 sm:flex-none px-4 sm:px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2 text-sm sm:text-base whitespace-nowrap"
+            aria-label={saving ? 'Saving template' : 'Save template'}
+          >
+            {saving ? (
+              <>
+                <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white border-t-transparent rounded-full animate-spin" aria-hidden="true"></div>
+                <span>Saving...</span>
+              </>
+            ) : (
+              <>
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span>Save Template</span>
+              </>
+            )}
+          </button>
+        </div>
+      }
+    >
+      <div className="max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Form Section */}
             <div className="lg:col-span-2 space-y-6">
               {/* Tab Navigation */}
@@ -295,7 +286,6 @@ const CreateResetaTemplate: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>
 
       {/* Success Modal */}
       <SuccessModal
@@ -316,7 +306,7 @@ const CreateResetaTemplate: React.FC = () => {
         message={errorMessage}
         errorType="warning"
       />
-    </>
+    </DashboardLayout>
   );
 };
 

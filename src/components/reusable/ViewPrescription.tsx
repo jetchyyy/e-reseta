@@ -4,6 +4,7 @@ import { collection, query, where, getDocs, deleteDoc, doc } from 'firebase/fire
 import { db } from '../../firebase/config';
 import { useNavigate } from 'react-router-dom';
 import { toJpeg } from 'html-to-image';
+import DashboardLayout from '../layout/DashboardLayout';
 import ErrorModal from './ErrorModal';
 import type { Prescription } from '../../types/prescription';
 import SuccessModal from './SuccessModal';
@@ -198,38 +199,30 @@ const handleSaveAsJPG = async () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
-      <div className="max-w-7xl mx-auto">
-        <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-6 mb-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-                Prescription History
-              </h1>
-              <p className="text-sm sm:text-base text-gray-600">
-                View and manage all your prescriptions
-              </p>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-              <button
-                onClick={() => navigate('/landing')}
-                className="px-4 py-2 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all text-sm sm:text-base"
-              >
-                Back to Dashboard
-              </button>
-              <button
-                onClick={() => navigate('/generate-prescription')}
-                className="px-4 sm:px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-all flex items-center justify-center gap-2 text-sm sm:text-base"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                <span>New Prescription</span>
-              </button>
-            </div>
-          </div>
+    <DashboardLayout 
+      title="Prescription History"
+      subtitle="View and manage all your prescriptions"
+      actions={
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+          <button
+            onClick={() => navigate('/landing')}
+            className="px-4 py-2 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all text-sm sm:text-base"
+          >
+            Back to Dashboard
+          </button>
+          <button
+            onClick={() => navigate('/generate-prescription')}
+            className="px-4 sm:px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-all flex items-center justify-center gap-2 text-sm sm:text-base"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            <span>New Prescription</span>
+          </button>
         </div>
-
+      }
+    >
+      <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-1 bg-white rounded-2xl shadow-xl p-4 sm:p-6">
             <div className="mb-4">
@@ -541,7 +534,7 @@ const handleSaveAsJPG = async () => {
           </div>
         </div>
       )}
-    </div>
+    </DashboardLayout>
   );
 };
 
