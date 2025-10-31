@@ -194,7 +194,7 @@ const LandingPage: React.FC = () => {
                       </svg>
                     </div>
                     <div className="text-left">
-                      <p className="font-semibold text-gray-900">View History</p>
+                      <p className="font-semibold text-gray-900">Prescription List</p>
                       <p className="text-xs text-gray-600">Past prescriptions</p>
                     </div>
                   </button>
@@ -265,10 +265,6 @@ const LandingPage: React.FC = () => {
                 <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
                   <span className="text-sm text-gray-700">This Month</span>
                   <span className="text-lg font-bold text-green-600">0</span>
-                </div>
-                <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
-                  <span className="text-sm text-gray-700">Active Patients</span>
-                  <span className="text-lg font-bold text-purple-600">0</span>
                 </div>
               </div>
             </div>

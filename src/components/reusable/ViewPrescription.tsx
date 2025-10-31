@@ -67,7 +67,7 @@ interface Prescription {
 }
 
 const ViewPrescriptions: React.FC = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, userData } = useAuth();
   const navigate = useNavigate();
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
   const [loading, setLoading] = useState(true);
@@ -493,16 +493,31 @@ const handleSaveAsJPG = async () => {
                   )}
 
                   {/* Footer / Signature */}
-                  <div className="border-t-2 border-gray-300 pt-4 mt-8">
-                    <p className="font-semibold text-lg">{selectedPrescription.template.doctorName}</p>
-                    <p className="text-sm">License No.: {selectedPrescription.template.licenseNo}</p>
-                    {selectedPrescription.template.ptrNo && (
-                      <p className="text-sm">PTR No.: {selectedPrescription.template.ptrNo}</p>
-                    )}
-                    {selectedPrescription.template.s2LicenseNo && (
-                      <p className="text-sm">S2 License No.: {selectedPrescription.template.s2LicenseNo}</p>
-                    )}
-                  </div>
+<div className="border-t-2 border-gray-300 pt-4 mt-8">
+  {/* Signature Display */}
+  {userData?.signature && (
+    <div className="mb-3">
+      <img 
+        src={userData.signature} 
+        alt="Signature" 
+        className="h-12 object-contain mix-blend-darken"
+        style={{ 
+          filter: 'contrast(1.2) brightness(1)',
+          backgroundColor: 'transparent'
+        }}
+      />
+    </div>
+  )}
+  
+  <p className="font-semibold text-lg">{selectedPrescription.template.doctorName}</p>
+  <p className="text-sm">License No.: {selectedPrescription.template.licenseNo}</p>
+  {selectedPrescription.template.ptrNo && (
+    <p className="text-sm">PTR No.: {selectedPrescription.template.ptrNo}</p>
+  )}
+  {selectedPrescription.template.s2LicenseNo && (
+    <p className="text-sm">S2 License No.: {selectedPrescription.template.s2LicenseNo}</p>
+  )}
+</div>
                 </div>
               </div>
             ) : (

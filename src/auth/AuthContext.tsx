@@ -15,6 +15,8 @@ interface UserData {
   displayName: string;
   photoURL: string;
   licenseNo?: string;
+  signature?: string;
+  professionalTitle?: string;  // Added professional title property
   hasCompletedProfile?: boolean;
 }
 
@@ -24,7 +26,7 @@ interface AuthContextType {
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
-  updateUserProfile: (licenseNo: string) => Promise<void>;
+  updateUserProfile: (licenseNo: string, signature: string) => Promise<void>;  // Updated to accept signature
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -115,7 +117,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const updateUserProfile = async (licenseNo: string) => {
+  const updateUserProfile = async (licenseNo: string, signature: string) => {
     if (!currentUser) {
       console.error('No current user');
       return;
@@ -131,6 +133,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         displayName: currentUser.displayName || '',
         photoURL: currentUser.photoURL || '',
         licenseNo,
+        signature,  // Added signature to update data
         hasCompletedProfile: true
       };
       
@@ -141,6 +144,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUserData(prev => prev ? {
         ...prev,
         licenseNo,
+        signature,  // Added signature to local state
         hasCompletedProfile: true
       } : null);
       
