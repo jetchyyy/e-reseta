@@ -17,6 +17,7 @@ const ViewPrescriptions: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'archived'>('all');
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
 
   useEffect(() => {
     loadPrescriptions();
@@ -68,10 +69,8 @@ const handleDeletePrescription = async (prescriptionId: string) => {
     try {
       await deleteDoc(doc(db, 'prescriptions', prescriptionId));
       
-      // Update local state
       setPrescriptions(prev => prev.filter(p => p.id !== prescriptionId));
       
-      // Clear selection if the deleted prescription was selected
       if (selectedPrescription?.id === prescriptionId) {
         setSelectedPrescription(null);
       }
@@ -98,21 +97,55 @@ const handleSaveAsJPG = async () => {
   }
 
   try {
+    setIsGeneratingImage(true);
+    
     const dataUrl = await toJpeg(prescriptionRef.current, {
       quality: 0.95,
       backgroundColor: 'white',
+      pixelRatio: 2,
+      cacheBust: true,
+      skipAutoScale: false,
     });
+
+    if (navigator.share && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+      const response = await fetch(dataUrl);
+      const blob = await response.blob();
+      const file = new File(
+        [blob], 
+        `${selectedPrescription?.patientInfo.name.replace(/\s+/g, '_') || 'prescription'}_${new Date().getTime()}.jpg`, 
+        { type: 'image/jpeg' }
+      );
+
+      try {
+        await navigator.share({
+          files: [file],
+          title: 'Prescription',
+          text: `Prescription for ${selectedPrescription?.patientInfo.name}`
+        });
+        return;
+      } catch (shareError) {
+        console.log('Share failed, falling back to download:', shareError);
+      }
+    }
+
     const link = document.createElement('a');
-    link.download = `${selectedPrescription?.patientInfo.name || 'prescription'}.jpg`;
+    link.download = `${selectedPrescription?.patientInfo.name.replace(/\s+/g, '_') || 'prescription'}_${new Date().getTime()}.jpg`;
     link.href = dataUrl;
+    document.body.appendChild(link);
     link.click();
+    document.body.removeChild(link);
+    
+    // Show success message using ErrorModal with info type
+    setErrorMessage('Image saved successfully! Check your Downloads folder or Gallery.');
+    setShowError(true);
   } catch (error) {
     console.error('Error saving JPG:', error);
-    setErrorMessage('Failed to save as JPG. Please try again.');
+    setErrorMessage('Failed to save as JPG. Please try again or use the Print option.');
     setShowError(true);
+  } finally {
+    setIsGeneratingImage(false);
   }
 };
-
 
   const filteredPrescriptions = prescriptions.filter(prescription => {
     const matchesSearch = prescription.patientInfo.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -135,27 +168,26 @@ const handleSaveAsJPG = async () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
-          <div className="flex items-center justify-between">
+        <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-6 mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
                 Prescription History
               </h1>
-              <p className="text-gray-600">
+              <p className="text-sm sm:text-base text-gray-600">
                 View and manage all your prescriptions
               </p>
             </div>
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
               <button
                 onClick={() => navigate('/landing')}
-                className="px-4 py-2 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all"
+                className="px-4 py-2 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all text-sm sm:text-base"
               >
                 Back to Dashboard
               </button>
               <button
                 onClick={() => navigate('/generate-prescription')}
-                className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-all flex items-center gap-2"
+                className="px-4 sm:px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-all flex items-center justify-center gap-2 text-sm sm:text-base"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -167,12 +199,10 @@ const handleSaveAsJPG = async () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Prescriptions List */}
-          <div className="lg:col-span-1 bg-white rounded-2xl shadow-xl p-6">
+          <div className="lg:col-span-1 bg-white rounded-2xl shadow-xl p-4 sm:p-6">
             <div className="mb-4">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">All Prescriptions</h2>
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">All Prescriptions</h2>
               
-              {/* Search */}
               <div className="mb-4">
                 <input
                   type="text"
@@ -183,11 +213,10 @@ const handleSaveAsJPG = async () => {
                 />
               </div>
 
-              {/* Filter */}
-              <div className="flex gap-2 mb-4">
+              <div className="flex flex-wrap gap-2 mb-4">
                 <button
                   onClick={() => setFilterStatus('all')}
-                  className={`px-3 py-1 rounded-lg text-sm font-medium transition-all ${
+                  className={`flex-1 sm:flex-none px-3 py-1 rounded-lg text-sm font-medium transition-all ${
                     filterStatus === 'all'
                       ? 'bg-indigo-600 text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -197,7 +226,7 @@ const handleSaveAsJPG = async () => {
                 </button>
                 <button
                   onClick={() => setFilterStatus('active')}
-                  className={`px-3 py-1 rounded-lg text-sm font-medium transition-all ${
+                  className={`flex-1 sm:flex-none px-3 py-1 rounded-lg text-sm font-medium transition-all ${
                     filterStatus === 'active'
                       ? 'bg-green-600 text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -207,7 +236,7 @@ const handleSaveAsJPG = async () => {
                 </button>
                 <button
                   onClick={() => setFilterStatus('archived')}
-                  className={`px-3 py-1 rounded-lg text-sm font-medium transition-all ${
+                  className={`flex-1 sm:flex-none px-3 py-1 rounded-lg text-sm font-medium transition-all ${
                     filterStatus === 'archived'
                       ? 'bg-gray-600 text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -218,14 +247,12 @@ const handleSaveAsJPG = async () => {
               </div>
             </div>
 
-            {/* Prescriptions Count */}
             <div className="mb-4 p-3 bg-indigo-50 rounded-lg">
               <p className="text-sm text-indigo-900">
                 <span className="font-bold">{filteredPrescriptions.length}</span> prescription{filteredPrescriptions.length !== 1 ? 's' : ''} found
               </p>
             </div>
 
-            {/* List */}
             <div className="space-y-3 max-h-[600px] overflow-y-auto">
               {filteredPrescriptions.length === 0 ? (
                 <div className="text-center py-8">
@@ -278,45 +305,33 @@ const handleSaveAsJPG = async () => {
             </div>
           </div>
 
-          {/* Prescription Detail View */}
           <div className="lg:col-span-2">
             {selectedPrescription ? (
-              <div className="bg-white rounded-2xl shadow-xl p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-bold text-gray-900">Prescription Details</h2>
-                  <div className="flex gap-2">
+              <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-6">
+                <div className="mb-6">
+                  <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">Prescription Details</h2>
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <button
                       onClick={handlePrintPrescription}
-                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-all flex items-center gap-2"
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-all flex items-center justify-center gap-2"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                       </svg>
                       Print
                     </button>
-  <button
-  onClick={handleSaveAsJPG}
-  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-all flex items-center gap-2"
->
-  <svg
-    className="w-4 h-4"
-    fill="none"
-    stroke="currentColor"
-    viewBox="0 0 24 24"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M12 5v14m7-7H5"
-    />
-  </svg>
-  Save as JPG
-</button>
-
+                    <button
+                      onClick={handleSaveAsJPG}
+                      className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-all flex items-center justify-center gap-2"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                      Save as JPG
+                    </button>
                     <button
                       onClick={() => handleDeletePrescription(selectedPrescription.id)}
-                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-all flex items-center gap-2"
+                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-all flex items-center justify-center gap-2"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -326,94 +341,84 @@ const handleSaveAsJPG = async () => {
                   </div>
                 </div>
 
+                <div 
+                  ref={prescriptionRef}
+                  className="border-2 border-gray-300 rounded-lg p-4 sm:p-8"
+                  style={{ backgroundColor: selectedPrescription.template.paperColor }}
+                >
+                  <div className="text-center mb-6 pb-4 border-b-2 border-gray-300">
+                    <h3 className="font-bold text-xl sm:text-2xl mb-2" style={{ color: selectedPrescription.template.headerColor }}>
+                      {selectedPrescription.template.clinicName}
+                    </h3>
+                    <p className="font-semibold text-base sm:text-lg mb-1">
+                      {selectedPrescription.template.doctorName}
+                      {selectedPrescription.template.doctorCredentials && `, ${selectedPrescription.template.doctorCredentials}`}
+                    </p>
+                    <p className="text-sm sm:text-base text-gray-600">{selectedPrescription.template.specialty}</p>
+                  </div>
 
-{/* Prescription Preview */}
-{/* Prescription Preview */}
-<div 
-  ref={prescriptionRef}
-  className="border-2 border-gray-300 rounded-lg p-8"
-  style={{ backgroundColor: selectedPrescription.template.paperColor }}
->
+                  <div className="mb-6 text-sm">
+                    <div className="grid grid-cols-2 gap-4 mb-3">
+                      <div>
+                        <p className="font-semibold mb-2">Address:</p>
+                        {selectedPrescription.template.clinicRoom && <p>{selectedPrescription.template.clinicRoom}</p>}
+                        <p>{selectedPrescription.template.clinicAddress}</p>
+                        {selectedPrescription.template.clinicCity && <p>{selectedPrescription.template.clinicCity}</p>}
+                        <p>{selectedPrescription.template.clinicCountry}</p>
+                      </div>
+                      <div>
+                        <p className="font-semibold mb-2">Contact:</p>
+                        <p>Phone: {selectedPrescription.template.phone}</p>
+                        {selectedPrescription.template.mobile && <p>Mobile: {selectedPrescription.template.mobile}</p>}
+                        <p>Email: {selectedPrescription.template.email}</p>
+                      </div>
+                    </div>
+                    
+                    {Object.keys(selectedPrescription.template.clinicHours).length > 0 && 
+                     Object.values(selectedPrescription.template.clinicHours).some(v => v) && (
+                      <div className="border-t border-gray-300 pt-3 mt-3">
+                        <p className="font-semibold mb-2">Clinic Hours:</p>
+                        <div className="grid grid-cols-2 gap-2">
+                          {Object.entries(selectedPrescription.template.clinicHours).map(([day, hours]) => 
+                            hours ? (
+                              <p key={day} className="capitalize">
+                                <span className="font-medium">{day}:</span> {hours}
+                              </p>
+                            ) : null
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
 
-  {/* Header */}
-  <div className="text-center mb-6 pb-4 border-b-2 border-gray-300">
-    <h3 className="font-bold text-2xl mb-2" style={{ color: selectedPrescription.template.headerColor }}>
-      {selectedPrescription.template.clinicName}
-    </h3>
-    <p className="font-semibold text-lg mb-1">
-      {selectedPrescription.template.doctorName}
-      {selectedPrescription.template.doctorCredentials && `, ${selectedPrescription.template.doctorCredentials}`}
-    </p>
-    <p className="text-gray-600">{selectedPrescription.template.specialty}</p>
-  </div>
+                  <div className="mb-6 border-t-2 border-gray-300 pt-4">
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p><strong>Patient Name:</strong> {selectedPrescription.patientInfo.name}</p>
+                        {selectedPrescription.patientInfo.age && <p><strong>Age:</strong> {selectedPrescription.patientInfo.age}</p>}
+                        {selectedPrescription.patientInfo.sex && <p><strong>Sex:</strong> {selectedPrescription.patientInfo.sex}</p>}
+                      </div>
+                      <div>
+                        <p><strong>Date:</strong> {new Date(selectedPrescription.prescriptionDate).toLocaleDateString()}</p>
+                        {selectedPrescription.patientInfo.address && (
+                          <p><strong>Address:</strong> {selectedPrescription.patientInfo.address}</p>
+                        )}
+                        {selectedPrescription.patientInfo.contactNumber && (
+                          <p><strong>Contact:</strong> {selectedPrescription.patientInfo.contactNumber}</p>
+                        )}
+                      </div>
+                    </div>
+                    {selectedPrescription.diagnosis && (
+                      <p className="mt-3"><strong>Diagnosis:</strong> {selectedPrescription.diagnosis}</p>
+                    )}
+                  </div>
 
-  {/* Contact Info - NOW INCLUDED */}
-  <div className="mb-6 text-sm">
-    <div className="grid grid-cols-2 gap-4 mb-3">
-      <div>
-        <p className="font-semibold mb-2">Address:</p>
-        {selectedPrescription.template.clinicRoom && <p>{selectedPrescription.template.clinicRoom}</p>}
-        <p>{selectedPrescription.template.clinicAddress}</p>
-        {selectedPrescription.template.clinicCity && <p>{selectedPrescription.template.clinicCity}</p>}
-        <p>{selectedPrescription.template.clinicCountry}</p>
-      </div>
-      <div>
-        <p className="font-semibold mb-2">Contact:</p>
-        <p>Phone: {selectedPrescription.template.phone}</p>
-        {selectedPrescription.template.mobile && <p>Mobile: {selectedPrescription.template.mobile}</p>}
-        <p>Email: {selectedPrescription.template.email}</p>
-      </div>
-    </div>
-    
-    {/* Clinic Hours - NOW INCLUDED */}
-    {Object.keys(selectedPrescription.template.clinicHours).length > 0 && 
-     Object.values(selectedPrescription.template.clinicHours).some(v => v) && (
-      <div className="border-t border-gray-300 pt-3 mt-3">
-        <p className="font-semibold mb-2">Clinic Hours:</p>
-        <div className="grid grid-cols-2 gap-2">
-          {Object.entries(selectedPrescription.template.clinicHours).map(([day, hours]) => 
-            hours ? (
-              <p key={day} className="capitalize">
-                <span className="font-medium">{day}:</span> {hours}
-              </p>
-            ) : null
-          )}
-        </div>
-      </div>
-    )}
-  </div>
+                  {selectedPrescription.template.showRxSymbol && (
+                    <div className="text-5xl font-serif mb-4" style={{ color: selectedPrescription.template.accentColor }}>
+                      ℞
+                    </div>
+                  )}
 
-  {/* Patient Information */}
-  <div className="mb-6 border-t-2 border-gray-300 pt-4">
-    <div className="grid grid-cols-2 gap-4 text-sm">
-      <div>
-        <p><strong>Patient Name:</strong> {selectedPrescription.patientInfo.name}</p>
-        {selectedPrescription.patientInfo.age && <p><strong>Age:</strong> {selectedPrescription.patientInfo.age}</p>}
-        {selectedPrescription.patientInfo.sex && <p><strong>Sex:</strong> {selectedPrescription.patientInfo.sex}</p>}
-      </div>
-      <div>
-        <p><strong>Date:</strong> {new Date(selectedPrescription.prescriptionDate).toLocaleDateString()}</p>
-        {selectedPrescription.patientInfo.address && (
-          <p><strong>Address:</strong> {selectedPrescription.patientInfo.address}</p>
-        )}
-        {selectedPrescription.patientInfo.contactNumber && (
-          <p><strong>Contact:</strong> {selectedPrescription.patientInfo.contactNumber}</p>
-        )}
-      </div>
-    </div>
-    {selectedPrescription.diagnosis && (
-      <p className="mt-3"><strong>Diagnosis:</strong> {selectedPrescription.diagnosis}</p>
-    )}
-  </div>
-
-  {/* Rx Symbol */}
-  {selectedPrescription.template.showRxSymbol && (
-    <div className="text-5xl font-serif mb-4" style={{ color: selectedPrescription.template.accentColor }}>
-      ℞
-    </div>
-  )}
-
-                  {/* Medications */}
                   <div className="border-t-2 border-gray-300 pt-4 mb-6">
                     <h4 className="font-bold text-lg mb-3">Medications:</h4>
                     <div className="space-y-4">
@@ -430,7 +435,6 @@ const handleSaveAsJPG = async () => {
                     </div>
                   </div>
 
-                  {/* Additional Notes */}
                   {selectedPrescription.additionalNotes && (
                     <div className="border-t-2 border-gray-300 pt-4 mb-6">
                       <h4 className="font-bold text-lg mb-2">Additional Notes:</h4>
@@ -438,32 +442,30 @@ const handleSaveAsJPG = async () => {
                     </div>
                   )}
 
-                  {/* Footer / Signature */}
-<div className="border-t-2 border-gray-300 pt-4 mt-8">
-  {/* Signature Display */}
-  {userData?.signature && (
-    <div className="mb-3">
-      <img 
-        src={userData.signature} 
-        alt="Signature" 
-        className="h-12 object-contain mix-blend-darken"
-        style={{ 
-          filter: 'contrast(1.2) brightness(1)',
-          backgroundColor: 'transparent'
-        }}
-      />
-    </div>
-  )}
-  
-  <p className="font-semibold text-lg">{selectedPrescription.template.doctorName}</p>
-  <p className="text-sm">License No.: {selectedPrescription.template.licenseNo}</p>
-  {selectedPrescription.template.ptrNo && (
-    <p className="text-sm">PTR No.: {selectedPrescription.template.ptrNo}</p>
-  )}
-  {selectedPrescription.template.s2LicenseNo && (
-    <p className="text-sm">S2 License No.: {selectedPrescription.template.s2LicenseNo}</p>
-  )}
-</div>
+                  <div className="border-t-2 border-gray-300 pt-4 mt-8">
+                    {userData?.signature && (
+                      <div className="mb-3">
+                        <img 
+                          src={userData.signature} 
+                          alt="Signature" 
+                          className="h-12 object-contain mix-blend-darken"
+                          style={{ 
+                            filter: 'contrast(1.2) brightness(1)',
+                            backgroundColor: 'transparent'
+                          }}
+                        />
+                      </div>
+                    )}
+                    
+                    <p className="font-semibold text-lg">{selectedPrescription.template.doctorName}</p>
+                    <p className="text-sm">License No.: {selectedPrescription.template.licenseNo}</p>
+                    {selectedPrescription.template.ptrNo && (
+                      <p className="text-sm">PTR No.: {selectedPrescription.template.ptrNo}</p>
+                    )}
+                    {selectedPrescription.template.s2LicenseNo && (
+                      <p className="text-sm">S2 License No.: {selectedPrescription.template.s2LicenseNo}</p>
+                    )}
+                  </div>
                 </div>
               </div>
             ) : (
@@ -489,6 +491,20 @@ const handleSaveAsJPG = async () => {
         message={errorMessage}
         errorType="error"
       />
+
+      {/* Loading Overlay */}
+      {isGeneratingImage && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-8 flex flex-col items-center shadow-2xl max-w-sm mx-4">
+            <div className="relative w-20 h-20 mb-6">
+              <div className="absolute inset-0 border-4 border-green-200 rounded-full"></div>
+              <div className="absolute inset-0 border-4 border-t-green-600 rounded-full animate-spin"></div>
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Generating Image</h3>
+            <p className="text-gray-600 text-center">Please wait while we create your prescription image...</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
