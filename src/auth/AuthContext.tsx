@@ -1,3 +1,4 @@
+// auth/AuthContext.tsx
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { User } from 'firebase/auth';
 import { 
@@ -9,6 +10,8 @@ import {
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, googleProvider, db } from '../firebase/config';
 
+export type VerificationStatus = 'unverified' | 'pending' | 'approved' | 'rejected';
+
 interface UserData {
   uid: string;
   email: string;
@@ -16,8 +19,13 @@ interface UserData {
   photoURL: string;
   licenseNo?: string;
   signature?: string;
-  professionalTitle?: string;  // Added professional title property
+  professionalTitle?: string;
   hasCompletedProfile?: boolean;
+  verificationStatus?: VerificationStatus;
+  rejectionReason?: string;
+  submittedAt?: string; // ISO timestamp
+  verifiedAt?: string;  // ISO timestamp
+  verifiedBy?: string;  // Admin UID
 }
 
 interface AuthContextType {
@@ -26,7 +34,7 @@ interface AuthContextType {
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
-  updateUserProfile: (licenseNo: string, signature: string) => Promise<void>;  // Updated to accept signature
+  updateUserProfile: (licenseNo: string, signature: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -47,38 +55,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const fetchUserData = async (user: User) => {
     try {
       const userDocRef = doc(db, 'users', user.uid);
-      
-      // Try to get the document
       const userDoc = await getDoc(userDocRef);
       
       if (userDoc.exists()) {
         const data = userDoc.data() as UserData;
         setUserData({
           ...data,
-          hasCompletedProfile: data.hasCompletedProfile === true
+          hasCompletedProfile: data.hasCompletedProfile === true,
+          verificationStatus: data.verificationStatus || 'unverified'
         });
       } else {
-       
         // Create initial user document
         const newUserData: UserData = {
           uid: user.uid,
           email: user.email || '',
           displayName: user.displayName || '',
           photoURL: user.photoURL || '',
-          hasCompletedProfile: false
+          hasCompletedProfile: false,
+          verificationStatus: 'unverified'
         };
         
-        console.log('Creating user document with data:', newUserData);
         await setDoc(userDocRef, newUserData);
         setUserData(newUserData);
-        console.log('User document created successfully');
       }
     } catch (error: any) {
       console.error('Error fetching user data:', error);
-      console.error('Error code:', error.code);
-      console.error('Error message:', error.message);
       
-      // If permission error, create a local user data object
       if (error.code === 'permission-denied') {
         console.warn('Permission denied, using local user data');
         const localUserData: UserData = {
@@ -86,7 +88,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           email: user.email || '',
           displayName: user.displayName || '',
           photoURL: user.photoURL || '',
-          hasCompletedProfile: false
+          hasCompletedProfile: false,
+          verificationStatus: 'unverified'
         };
         setUserData(localUserData);
       }
@@ -95,9 +98,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signInWithGoogle = async () => {
     try {
-      console.log('Starting Google sign in...');
       const result = await signInWithPopup(auth, googleProvider);
-      console.log('Google sign in successful:', result.user.uid);
       await fetchUserData(result.user);
     } catch (error) {
       console.error('Error signing in with Google:', error);
@@ -122,8 +123,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     
     try {
-      console.log('Updating user profile for:', currentUser.uid);
       const userDocRef = doc(db, 'users', currentUser.uid);
+      
+      // Determine new verification status
+      // If user is resubmitting after rejection, set to pending
+      // If first time submitting, set to pending
+      const currentStatus = userData?.verificationStatus || 'unverified';
+      const newStatus: VerificationStatus = 
+        (currentStatus === 'rejected' || currentStatus === 'unverified') 
+          ? 'pending' 
+          : currentStatus;
       
       const updateData = {
         uid: currentUser.uid,
@@ -131,33 +140,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         displayName: currentUser.displayName || '',
         photoURL: currentUser.photoURL || '',
         licenseNo,
-        signature,  // Added signature to update data
-        hasCompletedProfile: true
+        signature,
+        hasCompletedProfile: true,
+        verificationStatus: newStatus,
+        submittedAt: new Date().toISOString(),
+        // Clear rejection reason if resubmitting
+        ...(currentStatus === 'rejected' && { rejectionReason: null })
       };
       
-      console.log('Update data:', updateData);
       await setDoc(userDocRef, updateData, { merge: true });
       
       // Update local state
       setUserData(prev => prev ? {
         ...prev,
         licenseNo,
-        signature,  // Added signature to local state
-        hasCompletedProfile: true
+        signature,
+        hasCompletedProfile: true,
+        verificationStatus: newStatus,
+        submittedAt: updateData.submittedAt,
+        ...(currentStatus === 'rejected' && { rejectionReason: undefined })
       } : null);
       
-      console.log('Profile updated successfully');
     } catch (error: any) {
       console.error('Error updating profile:', error);
-      console.error('Error code:', error.code);
-      console.error('Error message:', error.message);
       throw error;
     }
   };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-  
       setCurrentUser(user);
       if (user) {
         await fetchUserData(user);
