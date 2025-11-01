@@ -46,21 +46,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchUserData = async (user: User) => {
     try {
-      console.log('Fetching user data for:', user.uid);
       const userDocRef = doc(db, 'users', user.uid);
       
       // Try to get the document
       const userDoc = await getDoc(userDocRef);
       
       if (userDoc.exists()) {
-        console.log('User document exists:', userDoc.data());
         const data = userDoc.data() as UserData;
         setUserData({
           ...data,
           hasCompletedProfile: data.hasCompletedProfile === true
         });
       } else {
-        console.log('User document does not exist, creating new one');
+       
         // Create initial user document
         const newUserData: UserData = {
           uid: user.uid,
@@ -158,9 +156,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    console.log('Setting up auth state listener');
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      console.log('Auth state changed:', user?.uid || 'No user');
+  
       setCurrentUser(user);
       if (user) {
         await fetchUserData(user);

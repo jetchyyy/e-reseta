@@ -13,8 +13,6 @@ const LandingPage: React.FC = () => {
   useEffect(() => {
     // Wait for loading to complete and userData to be available
     if (!loading && userData) {
-      console.log('User data loaded:', userData); // Debug log
-      console.log('Has completed profile:', userData.hasCompletedProfile); // Debug log
       
       if (!userData.hasCompletedProfile) {
         setIsModalOpen(true);
